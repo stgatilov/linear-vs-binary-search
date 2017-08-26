@@ -314,7 +314,7 @@ static TESTINLINE int binary_search_branchlessM (const int *arr, int n, int key)
     return pos + 1;
 }
 
-static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key) {
+static TESTINLINE int binary_search_branchlessA (const int *arr, int n, int key) {
     assert((n & (n+1)) == 0); //n = 2^k - 1
     //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
     intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
@@ -322,6 +322,19 @@ static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key)
     intptr_t step = intptr_t(1) << logstep;
     while (step > 0) {
         pos += (-(arr[pos + step] < key)) & step;
+        step >>= 1;
+    }
+    return pos + 1;
+}
+
+static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += ((arr[pos + step] - key) >> 31) & step;
         step >>= 1;
     }
     return pos + 1;
@@ -385,6 +398,7 @@ int main() {
         //res[sk++] = hybrid_search(arr, n, key);
         //res[sk++] = hybridX_search(arr, n, key);
         //res[sk++] = binary_search_branchlessM(arr, n, key);
+        //res[sk++] = binary_search_branchlessA(arr, n, key);
         //res[sk++] = binary_search_branchlessS(arr, n, key);
 
         //program terminates if any search gives different answer
@@ -444,6 +458,7 @@ int main() {
     //TEST_SEARCH(hybridX_search);
 
     //TEST_SEARCH(binary_search_branchlessM);
+    //TEST_SEARCH(binary_search_branchlessA);
     //TEST_SEARCH(binary_search_branchlessS);
 
     return 0;
