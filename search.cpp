@@ -245,6 +245,7 @@ static TESTINLINE int linearX_search_sse (const int *arr, int n, int key) {
     return i * 4 + bsf(~res);
 }
 
+//additional versions (experimental)
 
 static TESTINLINE int hybrid_search (const int *arr, int n, int key) {
     assert((n & (n+1)) == 0); //n = 2^k - 1
@@ -298,6 +299,32 @@ static TESTINLINE int hybridX_search (const int *arr, int n, int key) {
     uint32_t res = _mm_movemask_epi8 (pack0123);
 
     return pos + bsf(~res);
+}
+
+static TESTINLINE int binary_search_branchlessM (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += (arr[pos + step] < key) * step;
+        step >>= 1;
+    }
+    return pos + 1;
+}
+
+static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += (-(arr[pos + step] < key)) & step;
+        step >>= 1;
+    }
+    return pos + 1;
 }
 
 //======================= testing code =======================
@@ -354,9 +381,11 @@ int main() {
         res[sk++] = linear_search_sse_UR<SIZE>(arr, n, key);
         res[sk++] = linear_search_avx(arr, n, key);
         res[sk++] = linear_search_avx_UR<SIZE>(arr, n, key);
-        //some experimental hybrids:
+        //some experimental implementations:
         //res[sk++] = hybrid_search(arr, n, key);
         //res[sk++] = hybridX_search(arr, n, key);
+        //res[sk++] = binary_search_branchlessM(arr, n, key);
+        //res[sk++] = binary_search_branchlessS(arr, n, key);
 
         //program terminates if any search gives different answer
         for (int i = 1; i < sk; i++)
@@ -410,9 +439,12 @@ int main() {
     TEST_SEARCH(linear_search_avx);
     TEST_SEARCH(linear_search_avx_UR<SIZE>);
 
-    //some experimental hybrids:
+    //some experimental implementations:
     //TEST_SEARCH(hybrid_search);
     //TEST_SEARCH(hybridX_search);
+
+    //TEST_SEARCH(binary_search_branchlessM);
+    //TEST_SEARCH(binary_search_branchlessS);
 
     return 0;
 }

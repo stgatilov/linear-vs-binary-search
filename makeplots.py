@@ -30,7 +30,7 @@ for fn in glob.glob("res/*.log"):
 # plt.loglog([1,2,3,4], [1,4,9,16], 'bo', [1,2,3,4], [16,9,9,10], 'ro', basex=2, basey=2, linestyle='-')
 # plt.show()
 
-styles = ['k.', 'kx', 'bx', 'b+', 'ys', 'ro', 'rv', 'mo', 'mv']
+styles = ['k.', 'kx', 'bx', 'b+', 'ys', 'ro', 'rv', 'mo', 'mv', 'cx', 'c+']
 
 dpi = 150
 
