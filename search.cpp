@@ -441,24 +441,25 @@ int main() {
         const int *arr = input[t % ARR_SAMPLES];
         int key = keys[t % KEY_SAMPLES] = distr(rnd);
 
-        int res[16], sk = 0;
-        res[sk++] = binary_search_std(arr, n, key);
-        res[sk++] = binary_search_simple(arr, n, key);
-        res[sk++] = binary_search_branchless(arr, n, key);
-        res[sk++] = binary_search_branchless_UR<SIZE>(arr, n, key);
-        res[sk++] = linearX_search_scalar(arr, n, key);
-        res[sk++] = linear_search_scalar(arr, n, key);
+        int res[32], sk = 0;
+        //res[sk++] = linearX_search_scalar(arr, n, key);
+        //res[sk++] = linear_search_scalar(arr, n, key);
         res[sk++] = linearX_search_sse(arr, n, key);
         res[sk++] = linear_search_sse(arr, n, key);
         res[sk++] = linear_search_sse_UR<SIZE>(arr, n, key);
         res[sk++] = linear_search_avx(arr, n, key);
         res[sk++] = linear_search_avx_UR<SIZE>(arr, n, key);
+        res[sk++] = binary_search_std(arr, n, key);
+        res[sk++] = binary_search_simple(arr, n, key);
+        res[sk++] = binary_search_branchless(arr, n, key);
+        res[sk++] = binary_search_branchless_UR<SIZE>(arr, n, key);
         //some experimental implementations:
-        //res[sk++] = hybrid_search(arr, n, key);
-        //res[sk++] = hybridX_search(arr, n, key);
-        //res[sk++] = binary_search_branchlessM(arr, n, key);
-        //res[sk++] = binary_search_branchlessA(arr, n, key);
-        //res[sk++] = binary_search_branchlessS(arr, n, key);
+        res[sk++] = hybridX_search(arr, n, key);
+        res[sk++] = binary_search_branchlessM(arr, n, key);
+        res[sk++] = binary_search_branchlessA(arr, n, key);
+        res[sk++] = binary_search_branchlessS(arr, n, key);
+        res[sk++] = binary_search_branchless_pre(arr, n, key);
+        res[sk++] = quaternary_search_branchless(arr, n, key);
 
         //program terminates if any search gives different answer
         for (int i = 1; i < sk; i++)
@@ -498,13 +499,8 @@ int main() {
     }
 
     //run performance benchmark and print formatted results
-    TEST_SEARCH(binary_search_std);
-    TEST_SEARCH(binary_search_simple);
-    TEST_SEARCH(binary_search_branchless);
-    TEST_SEARCH(binary_search_branchless_UR<SIZE>);
-
-    TEST_SEARCH(linearX_search_scalar);
-    TEST_SEARCH(linear_search_scalar);
+    //TEST_SEARCH(linearX_search_scalar);
+    //TEST_SEARCH(linear_search_scalar);
 
     TEST_SEARCH(linearX_search_sse);
     TEST_SEARCH(linear_search_sse);
@@ -512,13 +508,20 @@ int main() {
     TEST_SEARCH(linear_search_avx);
     TEST_SEARCH(linear_search_avx_UR<SIZE>);
 
-    //some experimental implementations:
-    //TEST_SEARCH(hybrid_search);
-    //TEST_SEARCH(hybridX_search);
+    TEST_SEARCH(binary_search_std);
+    TEST_SEARCH(binary_search_simple);
+    TEST_SEARCH(binary_search_branchless);
+    TEST_SEARCH(binary_search_branchless_UR<SIZE>);
 
-    //TEST_SEARCH(binary_search_branchlessM);
-    //TEST_SEARCH(binary_search_branchlessA);
-    //TEST_SEARCH(binary_search_branchlessS);
+    //some experimental implementations:
+    TEST_SEARCH(hybridX_search);
+
+    TEST_SEARCH(binary_search_branchlessM);
+    TEST_SEARCH(binary_search_branchlessA);
+    TEST_SEARCH(binary_search_branchlessS);
+
+    TEST_SEARCH(binary_search_branchless_pre);
+    TEST_SEARCH(quaternary_search_branchless);
 
     return 0;
 }
