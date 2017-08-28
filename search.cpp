@@ -340,6 +340,65 @@ static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key)
     return pos + 1;
 }
 
+static TESTINLINE int binary_search_branchless_pre (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    int pivot = arr[pos + step];
+    while (step > 1) {
+        intptr_t nextstep = step >> 1;
+        int pivotL = arr[pos + nextstep];
+        int pivotR = arr[pos + step + nextstep];
+        pos = (pivot < key ? pos + step : pos);
+        pivot = (pivot < key ? pivotR : pivotL);
+        step = nextstep;
+    }
+    pos = (pivot < key ? pos + step : pos);
+    return pos + 1;
+}
+
+static TESTINLINE int quaternary_search_branchless (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n) - 1;
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        int pivotL = arr[pos + step * 1];
+        int pivotM = arr[pos + step * 2];
+        int pivotR = arr[pos + step * 3];
+        pos = (pivotL < key ? pos + step : pos);
+        pos = (pivotM < key ? pos + step : pos);
+        pos = (pivotR < key ? pos + step : pos);
+        step >>= 2;
+    }
+    pos = (arr[pos + 1] < key ? pos + 1 : pos);
+    return pos + 1;
+}
+
+static TESTINLINE int quaternary_search_branchless2 (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step2 = intptr_t(1) << logstep;
+    intptr_t step = step2 >> 1;
+    while (step > 0) {
+        int pivotL = arr[pos + step];
+        int pivotM = arr[pos + step2];
+        int pivotR = arr[pos + step2 + step];
+        pos = (pivotM < key ? pos + step2 : pos);
+        int pivotX = (pivotM < key ? pivotR : pivotL);
+        pos = (pivotX < key ? pos + step : pos);
+        step >>= 2;
+        step2 >>= 2;
+    }
+    pos = (arr[pos + 1] < key ? pos + 1 : pos);
+    return pos + 1;
+}
+
 //======================= testing code =======================
 
 //length of each input array (including one sentinel element)
