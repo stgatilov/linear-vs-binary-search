@@ -30,7 +30,7 @@ for fn in glob.glob("res/*.log"):
 # plt.loglog([1,2,3,4], [1,4,9,16], 'bo', [1,2,3,4], [16,9,9,10], 'ro', basex=2, basey=2, linestyle='-')
 # plt.show()
 
-styles = ['k.', 'kx', 'bx', 'b+', 'ys', 'ro', 'rv', 'mo', 'mv']
+styles = ['yx', 'rx', 'r+', 'mx', 'm+', 'k.', 'ko', 'bo', 'bs', 'yo', 'g*', 'gP', 'gd', 'm*', 'c*']
 
 dpi = 150
 
@@ -105,6 +105,7 @@ for mem, graphs in results.items():
     ax.grid(True, which="major")
     ax.grid(True, which="minor", color='0.8', linestyle=':')
     ax.legend(names, loc=2, prop={'size': 6})
+    ax.set_ylim(1.0, 7.0)
     ax.get_yaxis().set_minor_locator(ticker.MultipleLocator(0.5))
     ax.get_yaxis().tick_right()
     ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())

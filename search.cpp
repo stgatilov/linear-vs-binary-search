@@ -245,6 +245,7 @@ static TESTINLINE int linearX_search_sse (const int *arr, int n, int key) {
     return i * 4 + bsf(~res);
 }
 
+//additional versions (experimental)
 
 static TESTINLINE int hybrid_search (const int *arr, int n, int key) {
     assert((n & (n+1)) == 0); //n = 2^k - 1
@@ -300,6 +301,104 @@ static TESTINLINE int hybridX_search (const int *arr, int n, int key) {
     return pos + bsf(~res);
 }
 
+static TESTINLINE int binary_search_branchlessM (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += (arr[pos + step] < key) * step;
+        step >>= 1;
+    }
+    return pos + 1;
+}
+
+static TESTINLINE int binary_search_branchlessA (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += (-(arr[pos + step] < key)) & step;
+        step >>= 1;
+    }
+    return pos + 1;
+}
+
+static TESTINLINE int binary_search_branchlessS (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        pos += ((arr[pos + step] - key) >> 31) & step;
+        step >>= 1;
+    }
+    return pos + 1;
+}
+
+static TESTINLINE int binary_search_branchless_pre (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step = intptr_t(1) << logstep;
+    int pivot = arr[pos + step];
+    while (step > 1) {
+        intptr_t nextstep = step >> 1;
+        int pivotL = arr[pos + nextstep];
+        int pivotR = arr[pos + step + nextstep];
+        pos = (pivot < key ? pos + step : pos);
+        pivot = (pivot < key ? pivotR : pivotL);
+        step = nextstep;
+    }
+    pos = (pivot < key ? pos + step : pos);
+    return pos + 1;
+}
+
+static TESTINLINE int quaternary_search_branchless (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n) - 1;
+    intptr_t step = intptr_t(1) << logstep;
+    while (step > 0) {
+        int pivotL = arr[pos + step * 1];
+        int pivotM = arr[pos + step * 2];
+        int pivotR = arr[pos + step * 3];
+        pos = (pivotL < key ? pos + step : pos);
+        pos = (pivotM < key ? pos + step : pos);
+        pos = (pivotR < key ? pos + step : pos);
+        step >>= 2;
+    }
+    pos = (arr[pos + 1] < key ? pos + 1 : pos);
+    return pos + 1;
+}
+
+static TESTINLINE int quaternary_search_branchless2 (const int *arr, int n, int key) {
+    assert((n & (n+1)) == 0); //n = 2^k - 1
+    //intptr_t pos = -1;            //generates "or r9, -1" on MSVC -- false dependency harms throughput
+    intptr_t pos = MINUS_ONE;       //workaround for MSVC: generates mov without dependency
+    intptr_t logstep = bsr(n);
+    intptr_t step2 = intptr_t(1) << logstep;
+    intptr_t step = step2 >> 1;
+    while (step > 0) {
+        int pivotL = arr[pos + step];
+        int pivotM = arr[pos + step2];
+        int pivotR = arr[pos + step2 + step];
+        pos = (pivotM < key ? pos + step2 : pos);
+        int pivotX = (pivotM < key ? pivotR : pivotL);
+        pos = (pivotX < key ? pos + step : pos);
+        step >>= 2;
+        step2 >>= 2;
+    }
+    pos = (arr[pos + 1] < key ? pos + 1 : pos);
+    return pos + 1;
+}
+
 //======================= testing code =======================
 
 //length of each input array (including one sentinel element)
@@ -342,21 +441,25 @@ int main() {
         const int *arr = input[t % ARR_SAMPLES];
         int key = keys[t % KEY_SAMPLES] = distr(rnd);
 
-        int res[16], sk = 0;
-        res[sk++] = binary_search_std(arr, n, key);
-        res[sk++] = binary_search_simple(arr, n, key);
-        res[sk++] = binary_search_branchless(arr, n, key);
-        res[sk++] = binary_search_branchless_UR<SIZE>(arr, n, key);
-        res[sk++] = linearX_search_scalar(arr, n, key);
-        res[sk++] = linear_search_scalar(arr, n, key);
+        int res[32], sk = 0;
+        //res[sk++] = linearX_search_scalar(arr, n, key);
+        //res[sk++] = linear_search_scalar(arr, n, key);
         res[sk++] = linearX_search_sse(arr, n, key);
         res[sk++] = linear_search_sse(arr, n, key);
         res[sk++] = linear_search_sse_UR<SIZE>(arr, n, key);
         res[sk++] = linear_search_avx(arr, n, key);
         res[sk++] = linear_search_avx_UR<SIZE>(arr, n, key);
-        //some experimental hybrids:
-        //res[sk++] = hybrid_search(arr, n, key);
-        //res[sk++] = hybridX_search(arr, n, key);
+        res[sk++] = binary_search_std(arr, n, key);
+        res[sk++] = binary_search_simple(arr, n, key);
+        res[sk++] = binary_search_branchless(arr, n, key);
+        res[sk++] = binary_search_branchless_UR<SIZE>(arr, n, key);
+        //some experimental implementations:
+        res[sk++] = hybridX_search(arr, n, key);
+        res[sk++] = binary_search_branchlessM(arr, n, key);
+        res[sk++] = binary_search_branchlessA(arr, n, key);
+        res[sk++] = binary_search_branchlessS(arr, n, key);
+        res[sk++] = binary_search_branchless_pre(arr, n, key);
+        res[sk++] = quaternary_search_branchless(arr, n, key);
 
         //program terminates if any search gives different answer
         for (int i = 1; i < sk; i++)
@@ -396,13 +499,8 @@ int main() {
     }
 
     //run performance benchmark and print formatted results
-    TEST_SEARCH(binary_search_std);
-    TEST_SEARCH(binary_search_simple);
-    TEST_SEARCH(binary_search_branchless);
-    TEST_SEARCH(binary_search_branchless_UR<SIZE>);
-
-    TEST_SEARCH(linearX_search_scalar);
-    TEST_SEARCH(linear_search_scalar);
+    //TEST_SEARCH(linearX_search_scalar);
+    //TEST_SEARCH(linear_search_scalar);
 
     TEST_SEARCH(linearX_search_sse);
     TEST_SEARCH(linear_search_sse);
@@ -410,9 +508,20 @@ int main() {
     TEST_SEARCH(linear_search_avx);
     TEST_SEARCH(linear_search_avx_UR<SIZE>);
 
-    //some experimental hybrids:
-    //TEST_SEARCH(hybrid_search);
-    //TEST_SEARCH(hybridX_search);
+    TEST_SEARCH(binary_search_std);
+    TEST_SEARCH(binary_search_simple);
+    TEST_SEARCH(binary_search_branchless);
+    TEST_SEARCH(binary_search_branchless_UR<SIZE>);
+
+    //some experimental implementations:
+    TEST_SEARCH(hybridX_search);
+
+    TEST_SEARCH(binary_search_branchlessM);
+    TEST_SEARCH(binary_search_branchlessA);
+    TEST_SEARCH(binary_search_branchlessS);
+
+    TEST_SEARCH(binary_search_branchless_pre);
+    TEST_SEARCH(quaternary_search_branchless);
 
     return 0;
 }
