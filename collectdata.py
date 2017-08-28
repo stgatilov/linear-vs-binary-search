@@ -30,4 +30,4 @@ sizes = [16, 32, 64, 128, 256, 512, 1024]
 #sizes = [128, 256, 512, 1024, 2048, 4096]
 for s in sizes:
     CollectData(s, 64<<10)
-    CollectData(s, 512<<10)
+#    CollectData(s, 512<<10)
