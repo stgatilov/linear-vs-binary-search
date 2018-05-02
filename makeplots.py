@@ -1,3 +1,4 @@
+#!python3
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import sys, os, glob, re, math
