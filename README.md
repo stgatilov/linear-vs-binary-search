@@ -1,12 +1,12 @@
 # linear-vs-binary-search
 
 These are the materials for the blog post:
-  https://dirtyhandscoding.wordpress.com/2017/08/25/performance-comparison-linear-search-vs-binary-search/
+  https://dirtyhandscoding.github.io/posts/performance-comparison-linear-search-vs-binary-search.html
 
 It compares several implementations of linear or binary search intended to find position within a sorted array.
 Here is the main plot with results (Broadwell 2 Ghz CPU), see the blog post for more information.
-![Throughput](https://dirtyhandscoding.files.wordpress.com/2017/08/plot_search_655362.png?w=500)
-![Latency](https://dirtyhandscoding.files.wordpress.com/2017/08/plot_search_655363.png?w=500)
+![Throughput](https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_thr.png?w=500)
+![Latency](https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_lat.png?w=500)
 
 Contents
 --------
