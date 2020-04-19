@@ -5,8 +5,9 @@ These are the materials for the blog post:
 
 It compares several implementations of linear or binary search intended to find position within a sorted array.
 Here is the main plot with results (Broadwell 2 Ghz CPU), see the blog post for more information.
-![Throughput](https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_thr.png?w=500)
-![Latency](https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_lat.png?w=500)
+
+<img src="https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_thr.png" width="500" height="500">
+<img src="https://dirtyhandscoding.github.io/images/2_lin_bin_search/plot_search_65536_lat.png" width="500" height="500">
 
 Contents
 --------
